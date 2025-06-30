@@ -75,9 +75,6 @@ A modern, real-time feedback collection platform designed for educational instit
    npm run dev
    ```
 
-6. **Open your browser**
-   Navigate to `http://localhost:5173`
-
 ## 📊 Database Schema
 
 The application uses the following main tables:
