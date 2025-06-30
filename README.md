@@ -45,7 +45,7 @@ A modern, real-time feedback collection platform designed for educational instit
 1. **Clone the repository**
 
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/rmrayakar/Feedback_System.git
    cd Feedback_System
    ```
 
