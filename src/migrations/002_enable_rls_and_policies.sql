@@ -38,13 +38,6 @@ CREATE POLICY "Users can update their own profile"
   ON users FOR UPDATE
   USING (auth.uid() = id);
 
--- Allow anyone to select teachers by teacher_code (for enrollment only)
-CREATE POLICY "Allow select teacher by code for enrollment"
-  ON users FOR SELECT
-  USING (
-    role = 'teacher'
-    AND teacher_code IS NOT NULL
-  );
 
 -- Remove the old policy if it exists
 DROP POLICY IF EXISTS "Allow teachers to view students and users to view themselves" ON users;

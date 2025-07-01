@@ -711,36 +711,74 @@ const SessionResults = ({ user, onLogout }: SessionResultsProps) => {
           </Card>
         )}
 
-        {/* Satisfaction Gauge (Donut Chart) */}
+        {/* Satisfaction Gauge */}
         <Card>
           <CardHeader>
             <CardTitle>Satisfaction Gauge</CardTitle>
+            <CardDescription>
+              Percentage of students who rated 4 or 5 stars
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: "Satisfied", value: Math.round(satisfaction) },
-                    { name: "Other", value: 100 - Math.round(satisfaction) },
-                  ]}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#10b981"
-                  label={({ option, percent }) =>
-                    `${option}: ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  <Cell key="satisfied" fill="#10b981" />
-                  <Cell key="other" fill="#e5e7eb" />
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-center">
+              <div className="relative">
+                <ResponsiveContainer width={200} height={200}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Satisfied", value: Math.round(satisfaction) },
+                        {
+                          name: "Neutral/Dissatisfied",
+                          value: 100 - Math.round(satisfaction),
+                        },
+                      ]}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      <Cell key="satisfied" fill="#10b981" />
+                      <Cell key="other" fill="#e5e7eb" />
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name) => [`${value}%`, name]}
+                      contentStyle={{
+                        backgroundColor: "rgba(255, 255, 255, 0.95)",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-gray-900">
+                      {Math.round(satisfaction)}%
+                    </div>
+                    <div className="text-sm text-gray-500">Satisfied</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 text-center">
+              <div className="flex items-center justify-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-600">Satisfied (4-5 stars)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                  <span className="text-gray-600">
+                    Neutral/Dissatisfied (1-3 stars)
+                  </span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

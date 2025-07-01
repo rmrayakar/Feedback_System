@@ -50,7 +50,9 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
         setErrorMsg(error.message);
         return;
       }
-      setInfoMsg("Check your email to verify your account before logging in.");
+      setInfoMsg(
+        "Registration successful! Please check your email and verify your account before logging in."
+      );
       return;
     } else if (action === "register") {
       // Teacher registration
@@ -63,7 +65,9 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
         setErrorMsg(error.message);
         return;
       }
-      setInfoMsg("Check your email to verify your account before logging in.");
+      setInfoMsg(
+        "Registration successful! Please check your email and go to main to verify your account before logging in."
+      );
       // Do NOT insert into users table here; wait until login.
       return;
     } else if (action === "signin") {
@@ -133,6 +137,23 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
     else setInfoMsg("Password reset email sent. Check your inbox.");
   };
 
+  const handleKeyPress = (
+    event: React.KeyboardEvent,
+    userType: "teacher" | "student"
+  ) => {
+    if (event.key === "Enter") {
+      const mode = userType === "student" ? studentMode : teacherMode;
+      const isValid =
+        formData.email &&
+        formData.password &&
+        (mode === "signin" || formData.name);
+
+      if (isValid) {
+        handleSubmit(userType, mode);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
       <Card className="w-full max-w-md">
@@ -189,6 +210,7 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "student")}
                         required={studentMode === "register"}
                       />
                     </div>
@@ -208,6 +230,7 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
+                      onKeyPress={(e) => handleKeyPress(e, "student")}
                       required
                     />
                   </div>
@@ -226,6 +249,7 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
+                      onKeyPress={(e) => handleKeyPress(e, "student")}
                       required
                     />
                   </div>
@@ -296,6 +320,7 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "teacher")}
                         required={teacherMode === "register"}
                       />
                     </div>
@@ -315,6 +340,7 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
+                      onKeyPress={(e) => handleKeyPress(e, "teacher")}
                       required
                     />
                   </div>
@@ -333,6 +359,7 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
+                      onKeyPress={(e) => handleKeyPress(e, "teacher")}
                       required
                     />
                   </div>
@@ -364,8 +391,13 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
             </TabsContent>
           </Tabs>
           {errorMsg && (
-            <div className="mb-4 text-red-600 text-center text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center text-sm">
               {errorMsg}
+            </div>
+          )}
+          {infoMsg && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-center text-sm">
+              {infoMsg}
             </div>
           )}
         </CardContent>

@@ -30,16 +30,17 @@ const TeacherDashboard = ({ user, onLogout }: TeacherDashboardProps) => {
 
   const [sessions, setSessions] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
-  const [assignedStudents, setAssignedStudents] = useState<any[]>([]);
   const [responses, setResponses] = useState<any[]>([]);
 
   useEffect(() => {
     // Fetch sessions created by this teacher
     const fetchSessions = async () => {
+      console.log("Fetching sessions for teacher:", user.id);
       const { data, error } = await supabase
         .from("sessions")
         .select("*")
         .eq("teacher_id", user.id);
+      console.log("Sessions result:", { data, error });
       if (!error && data) setSessions(data);
     };
     // Fetch all students
@@ -50,18 +51,12 @@ const TeacherDashboard = ({ user, onLogout }: TeacherDashboardProps) => {
         .eq("role", "student");
       if (!error && data) setStudents(data);
     };
-    // Fetch assigned students and responses for all sessions
-    const fetchAssignedAndResponses = async (sessionIds: string[]) => {
+    // Fetch responses for all sessions
+    const fetchResponses = async (sessionIds: string[]) => {
       if (sessionIds.length === 0) {
-        setAssignedStudents([]);
         setResponses([]);
         return;
       }
-      const { data: assigned } = await supabase
-        .from("session_students")
-        .select("student_id, session_id")
-        .in("session_id", sessionIds);
-      setAssignedStudents(assigned || []);
       const { data: resp } = await supabase
         .from("responses")
         .select("student_id, session_id")
@@ -76,32 +71,76 @@ const TeacherDashboard = ({ user, onLogout }: TeacherDashboardProps) => {
 
   useEffect(() => {
     const sessionIds = sessions.map((s) => s.id);
+    console.log("Session IDs for fetching responses:", sessionIds);
+
     if (sessionIds.length > 0) {
-      const fetchAssignedAndResponses = async () => {
-        const { data: assigned } = await supabase
-          .from("session_students")
-          .select("student_id, session_id")
-          .in("session_id", sessionIds);
-        setAssignedStudents(assigned || []);
-        const { data: resp } = await supabase
+      const fetchResponses = async () => {
+        console.log("Fetching responses for sessions:", sessionIds);
+
+        const { data: resp, error: respError } = await supabase
           .from("responses")
           .select("student_id, session_id")
           .in("session_id", sessionIds);
+
+        console.log("Responses result:", { data: resp, error: respError });
         setResponses(resp || []);
       };
-      fetchAssignedAndResponses();
+      fetchResponses();
     } else {
-      setAssignedStudents([]);
+      console.log("No sessions to fetch responses for");
       setResponses([]);
     }
   }, [sessions]);
 
-  // Calculate real response rate
-  const totalAssigned = assignedStudents.length;
-  const uniqueRespondents = new Set(responses.map((r) => r.student_id)).size;
-  const responseRate = totalAssigned
-    ? Math.round((uniqueRespondents / totalAssigned) * 100)
-    : 0;
+  // Calculate overall response rate across all sessions
+  const calculateOverallResponseRate = () => {
+    if (sessions.length === 0) return 0;
+
+    let totalAssignedStudents = 0;
+    let totalRespondedStudents = 0;
+
+    console.log("=== Response Rate Calculation Debug ===");
+    console.log("Sessions:", sessions);
+    console.log("Responses:", responses);
+
+    sessions.forEach((session) => {
+      // Use the assigned_students_count from the sessions table
+      const sessionAssignedCount = session.assigned_students_count || 0;
+
+      const sessionResponses = responses.filter(
+        (response) => response.session_id === session.id
+      );
+      const uniqueSessionRespondents = new Set(
+        sessionResponses.map((r) => r.student_id)
+      );
+      const uniqueRespondentsCount = uniqueSessionRespondents.size;
+
+      console.log(`Session "${session.title}" (${session.id}):`);
+      console.log(`  - Assigned students (from DB): ${sessionAssignedCount}`);
+      console.log(`  - Unique respondents: ${uniqueRespondentsCount}`);
+      console.log(`  - Session responses:`, sessionResponses);
+
+      totalAssignedStudents += sessionAssignedCount;
+      totalRespondedStudents += uniqueRespondentsCount;
+    });
+
+    console.log(`Total assigned: ${totalAssignedStudents}`);
+    console.log(`Total responded: ${totalRespondedStudents}`);
+    console.log(
+      `Response rate: ${
+        totalAssignedStudents > 0
+          ? Math.round((totalRespondedStudents / totalAssignedStudents) * 100)
+          : 0
+      }%`
+    );
+    console.log("=== End Debug ===");
+
+    return totalAssignedStudents > 0
+      ? Math.round((totalRespondedStudents / totalAssignedStudents) * 100)
+      : 0;
+  };
+
+  const responseRate = calculateOverallResponseRate();
 
   // Calculate active and completed sessions using expires_at
   const now = new Date();
@@ -124,6 +163,23 @@ const TeacherDashboard = ({ user, onLogout }: TeacherDashboardProps) => {
       responses: responded.size,
       students: session.assigned_students_count || 0,
     };
+  });
+
+  // Debug logging
+  console.log("Teacher Dashboard Debug Info:", {
+    sessions: sessions.length,
+    totalAssigned: sessions.reduce(
+      (sum, s) => sum + (s.assigned_students_count || 0),
+      0
+    ),
+    responses: responses.length,
+    responseRate,
+    sessionStats: sessionStats.map((s) => ({
+      id: s.id,
+      title: s.title,
+      assigned: s.students,
+      responses: s.responses,
+    })),
   });
 
   const getStatusIcon = (status: string) => {
@@ -303,10 +359,13 @@ const TeacherDashboard = ({ user, onLogout }: TeacherDashboardProps) => {
                 <Clock className="h-8 w-8 text-orange-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    Response Rate
+                    Overall Response Rate
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
                     {responseRate}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Across all sessions
                   </p>
                 </div>
               </div>
